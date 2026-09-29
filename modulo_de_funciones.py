@@ -3,6 +3,56 @@ import pandas as pd
 import re
 
 
+
+def deteccion_de_expedientes(DF_IN__ : pd.DataFrame, DF_COMP : pd.DataFrame, column_1 : str = "EXPEDIENTE N°" ,
+              column_2 : str = "N° EXPEDIENTE PAGO", nombre_columna : str = "En Planillas", regex = r"\d{5,}",
+              nombre_planilla : str = ""):
+
+    """
+    La función detecta expedientes que se encuentran en otras planillas, representadas mediante DataFrames.
+
+    Args:
+        DF_IN__ : DataFrame donde se ejecuta la búsqueda utilizando la columna 'column_1'
+        column_1 : Nombre de la columna en la cual se ejecuta la búsqueda del DataFrame de ingreso, DF_IN
+        DF_COMP : DataFrame de comparación en el cual se buscan los elementos, utilizando 'column_2'
+        column_2 : Nombre de la columna en la cual se comparan del DataFrame de ingreso, DF_COMP
+        nombre_columna : Nombre de la columna que se agrega al ejecutar la función
+
+    Returns:
+        Devuelve el DataFrame de ingreso, DF_IN, con la columna 'nombre_columna' agregada informando si
+        el valor en la 'column_1' se encuentra en la planilla representada por el DataFrame DF_COMP, cuyo
+        valor se encuentra en la column_2. En caso positivo la celda se puebla con 'SI'; por el contrario
+        la celda queda vacía.
+    """
+    DF_IN = DF_IN__.copy()
+    DF_IN[column_1] = DF_IN[column_1].apply(id_tram_space_norm).copy()
+    DF_COMP = DF_COMP[[column_2]].drop_duplicates().dropna().copy()
+    DF_COMP[column_2] = DF_COMP[column_2].apply(id_tram_space_norm).copy()
+    if not nombre_columna in DF_IN.columns.to_list():
+        DF_IN[nombre_columna] = DF_IN.apply(lambda _ : np.nan, axis=1).astype("string")
+
+   
+    mask_ = DF_IN[nombre_columna].isna()
+    for idx in DF_IN.index[mask_]:
+        text = DF_IN.at[idx, column_1]
+        if pd.isna(text) or text == "": continue
+        
+        get_me = DF_COMP[column_2].str.contains(text, regex=False)
+        get_me = get_me.astype("boolean").fillna(False).infer_objects(copy=False)
+        
+        if get_me.sum() == 0:
+            text = re.search(regex, text)
+            if pd.isna(text) or text == "": continue
+            text = text.group()
+            get_me = DF_COMP[column_2].str.contains(text, regex=False)
+            get_me = get_me.astype("boolean").fillna(False).infer_objects(copy=False)
+        
+        if len(DF_COMP[get_me])>0:            
+            DF_IN.at[idx, nombre_columna] = f"SI{nombre_planilla}"
+    
+    return DF_IN
+
+
 def norm_empresa(value : str) -> str:
     """
     Normaliza en nombre de la empresa a buscar

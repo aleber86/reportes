@@ -6,45 +6,10 @@ import pandas as pd
 import re
 import time
 from zipfile import ZipFile
-from modulo_de_funciones import (id_tram_space_norm, group_dupl, join_values, second_lookup,)
+from modulo_de_funciones import (id_tram_space_norm, group_dupl, join_values, second_lookup,
+                                 deteccion_de_expedientes)
 
 
-def deteccion_de_expedientes(DF_IN : pd.DataFrame, DF_COMP : pd.DataFrame, column_1 : str = "EXPEDIENTE N°" ,
-              column_2 : str = "N° EXPEDIENTE PAGO", nombre_columna : str = "En Planillas"):
-
-    """
-    La función detecta expedientes que se encuentran en otras planillas, representadas mediante DataFrames.
-
-    Args:
-        DF_IN : DataFrame donde se ejecuta la búsqueda utilizando la columna 'column_1'
-        column_1 : Nombre de la columna en la cual se ejecuta la búsqueda del DataFrame de ingreso, DF_IN
-        DF_COMP : DataFrame de comparación en el cual se buscan los elementos, utilizando 'column_2'
-        column_2 : Nombre de la columna en la cual se comparan del DataFrame de ingreso, DF_COMP
-        nombre_columna : Nombre de la columna que se agrega al ejecutar la función
-
-    Returns:
-        Devuelve el DataFrame de ingreso, DF_IN, con la columna 'nombre_columna' agregada informando si
-        el valor en la 'column_1' se encuentra en la planilla representada por el DataFrame DF_COMP, cuyo
-        valor se encuentra en la column_2. En caso positivo la celda se puebla con 'SI'; por el contrario
-        la celda queda vacía.
-    """
-   
-    DF_IN[column_1] = DF_IN.apply(id_tram_space_norm, axis=1, args=(column_1,)).copy()
-    DF_COMP = DF_COMP[[column_2]].drop_duplicates().dropna().copy()
-    DF_COMP[column_2] = DF_COMP.apply(id_tram_space_norm, axis=1, args=(column_2,)).copy()
-    if not nombre_columna in DF_IN.columns.to_list():
-        DF_IN[nombre_columna] = DF_IN.apply(lambda _ : np.nan, axis=1).astype("string")
-
-   
-    mask_ = DF_IN[nombre_columna].isna()
-    for idx in DF_IN.index[mask_]:
-        text = DF_IN.at[idx, column_1]
-        get_me = DF_COMP[column_2].str.contains(text, regex=False)
-        if len(DF_COMP[get_me])>0:
-            DF_TO_USE = DF_COMP[get_me].copy()
-
-            DF_IN.at[idx, nombre_columna] = "SI"
-    return DF_IN
 
 
 def execute(DF_SB_PROV : pd.DataFrame, DF_SAF : pd.DataFrame,
@@ -157,7 +122,7 @@ if __name__ == '__main__':
 
     #********************************************************************************
     #ÚNICA LÍNEA A MODIFICAR, DE SER NECESARIO:
-    ARCHIVO = "OneDrive_2026-09-14.zip"
+    ARCHIVO = "OneDrive_2026-09-28.zip"
     archivos = [ARCHIVO, f"{ARCHIVO.replace('.zip',' (1).zip')}"]
     #CAMBIAR EL NOMBRE DEL ARCHIVO DESCARGADO DESDE OneDrive
     #********************************************************************************
@@ -173,73 +138,17 @@ if __name__ == '__main__':
     DF_SB_350 =  pd.read_excel(f"{directorio_SB}350 - SERVICIOS BASICOS - TRABAJO.xlsx", sheet_name = hojas_350)
     DF_SB_350_CENTRAL = DF_SB_350["CENTRAL"]
     DF_SB_350_AT = DF_SB_350["AT"]
+
+    prev_311 = pd.read_excel("Reporte_311_341.xlsx", sheet_name="SAF 311", skiprows=4)
     
-
-    
-    #DF_SB_350_CENTRAL = pd.read_excel(f"{directorio_SB}350 - SERVICIOS BASICOS - TRABAJO.xlsx", sheet_name = "CENTRAL")
-    #DF_SB_350_AT = pd.read_excel(f"{directorio_SB}350 - SERVICIOS BASICOS - TRABAJO.xlsx", sheet_name = "AT")
-
-    #DF_PROVEEDORES_UNIFICADO = pd.read_excel("UNIFICADO PROVEEDORES.xlsx", sheet_name="Compilado Total")
-    
-    #DF_SAF_311_PROV = DF_PROVEEDORES_UNIFICADO[DF_PROVEEDORES_UNIFICADO["SAF"]==311].copy()
-    #DF_SAF_330_PROV = DF_PROVEEDORES_UNIFICADO[DF_PROVEEDORES_UNIFICADO["SAF"]==330].copy()
-    #DF_SAF_350_PROV = DF_PROVEEDORES_UNIFICADO[DF_PROVEEDORES_UNIFICADO["SAF"]==350].copy()
-    #DF_SAF_388_PROV = DF_PROVEEDORES_UNIFICADO[DF_PROVEEDORES_UNIFICADO["SAF"]==388].copy()
-
-
     hojas_SAF = ["SAF 311", "SAF 330", "SAF 350", "SAF 388"]
     DF_SAFS = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name=hojas_SAF)
     DF_SAF_311 = DF_SAFS["SAF 311"]
     DF_SAF_330 = DF_SAFS["SAF 330"]
     DF_SAF_350 = DF_SAFS["SAF 350"]
     DF_SAF_388 = DF_SAFS["SAF 388"]
-    #DF_SAF_311 = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name="SAF 311")
-    #DF_SAF_330 = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name="SAF 330")
-    #DF_SAF_350 = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name="SAF 350")
-    #DF_SAF_388 = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name="SAF 388")
-
-    #Descomentar el bloque en caso de buscar en ejercicios anteriores a 2026
-    """
-    #Archivos de origen historico
-    DF_SAF_388_HIST = pd.read_excel("Reporte_311_341.xlsx", skiprows=4, sheet_name="SAF 388")
-    DF_SAF_350_HIST = pd.read_excel("Reporte_311_341.xlsx", skiprows=4, sheet_name="SAF 350")
-    DF_SAF_330_HIST = pd.read_excel("Reporte_311_341.xlsx", skiprows=4, sheet_name="SAF 330")
-    DF_SAF_311_HIST = pd.read_excel("Reporte_311_341.xlsx", skiprows=4, sheet_name="SAF 311")
-    #Agergado a los valores actuales
-    DF_SAF_388 = pd.concat([DF_SAF_388_HIST, DF_SAF_388])
-    DF_SAF_350 = pd.concat([DF_SAF_350_HIST, DF_SAF_350])
-    DF_SAF_330 = pd.concat([DF_SAF_330_HIST, DF_SAF_330])
-    DF_SAF_311 = pd.concat([DF_SAF_311_HIST, DF_SAF_311])
     
-
-    DF_DIGEST_311 = execute(DF_SAF_311_PROV, DF_SAF_311, "EXPEDIENTE PAGADOR",forget=False)
-    DF_DIGEST_330 = execute(DF_SAF_330_PROV, DF_SAF_330, "EXPEDIENTE PAGADOR",forget=False)
-    DF_DIGEST_350 = execute(DF_SAF_350_PROV, DF_SAF_350, "EXPEDIENTE PAGADOR",forget=False)
-    DF_DIGEST_388 = execute(DF_SAF_388_PROV, DF_SAF_388, "EXPEDIENTE PAGADOR",forget=False)
-    
-    #Stack vertical para la exposición de un solo DataFrame como resultado
-    DF_DIGEST_FULL = pd.concat([DF_DIGEST_311, DF_DIGEST_330, DF_DIGEST_350, DF_DIGEST_388])
-    
-    #Se obtienen las columnas de interés, tendiendo en cuenta que el proceso de búsqueda produjo
-    #valores de expedientes 'normalizados; en la realidad sus contrapartes son NO normalizadas
-    DF_DIGEST_TO_FILE = DF_DIGEST_FULL[["EXPEDIENTE__SIN__NORMALIZAR", "SG(auto)", "PRE(auto)",
-                                        "PG(auto)", "Fecha de Pago"]].copy()
-
-    #Reducción de expedientes de salida; se obtienen solamente aquellos que poseen valores
-    #no nulos en las columnas de interés mediante una máscara
-    mask_full = ((~DF_DIGEST_TO_FILE["EXPEDIENTE__SIN__NORMALIZAR"].isna())& \
-                ((~DF_DIGEST_TO_FILE["SG(auto)"].isna()) | (~DF_DIGEST_TO_FILE["PRE(auto)"].isna()) | (~DF_DIGEST_TO_FILE["PG(auto)"].isna())))
-
-    
-    DF_DIGEST_TO_FILE = DF_DIGEST_TO_FILE[mask_full].copy()
-
-    #Se exportan los resultados de la planilla UNIFICADO
-    with pd.ExcelWriter("PROV-FULL.xlsx") as  writer:
-        DF_DIGEST_TO_FILE.to_excel(writer, sheet_name="SG_PRE_PG_UNIFICADO", index=False)
-
-    """
-
-
+    DF_SAF_311 = pd.concat([DF_SAF_311, prev_311])
         
     DF_PROV_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311")
     DF_SUBSIDIOS_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Subsidios")
@@ -251,6 +160,14 @@ if __name__ == '__main__':
     DF_PROV_350_LA_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "LA - AT")
     DF_PROV_350_OC = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - CENTRAL")
     DF_PROV_350_OC_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - AT")
+    DF_PROV_388 = pd.read_excel(f"{directorio_PROV}388 - PROVEEDORES.xlsx", sheet_name = "Compilado")
+    DF_PROV_311_SEGUROS = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Seguros")
+    DF_PROV_311_SEGUROS_VARIOS = pd.read_excel("SEGUROS.xlsx", sheet_name="Seguros")
+    #-------------------------PRE-UNIFICACION
+
+    DF_SAF311_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311 (Pre-unificacion)")
+    DF_SAF330_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330 (Pre-unificacion)")
+
     with pd.ExcelWriter("PROV - 330.xlsx") as writer:
         
         res = execute(DF_PROV_330, DF_SAF_330, "EXPEDIENTE PAGADOR")
@@ -259,9 +176,10 @@ if __name__ == '__main__':
         res.to_excel(writer, sheet_name="SAF 330 CORREO", index=False)
         res = execute(DF_PROV_330_SEGUROS, DF_SAF_330, "EXPEDIENTE PAGADOR")
         res.to_excel(writer, sheet_name="SAF 330 SEGUROS", index=False)
+        res = execute(DF_SAF330_PREUNIFICACION, DF_SAF_330, "EXPEDIENTE PAGADOR")
+        res.to_excel(writer, sheet_name="330 (Pre-unificacion)")
         
-        #res = execute(DF_SAF_330_PROV, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 330 PROVEEDORES", index=False)
+
     
     with pd.ExcelWriter("PROV - 350.xlsx") as writer:
         
@@ -274,19 +192,26 @@ if __name__ == '__main__':
         res = execute(DF_PROV_350_OC_AT, DF_SAF_350, "EXPEDIENTE PAGADOR")
         res.to_excel(writer, sheet_name="SAF 350 OC AT", index=False)
         
-        #res = execute(DF_SAF_350_PROV, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 350 LA - CENT", index=False)
+
         
     with pd.ExcelWriter("PROV - 311.xlsx") as writer:
         
         res = execute(DF_PROV_311, DF_SAF_311, "EXPEDIENTE PAGADOR")
         res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
-        res = execute(DF_SUBSIDIOS_311, DF_SAF_311)
+        res = execute(DF_SUBSIDIOS_311, DF_SAF_311, forget=True)
         res.to_excel(writer, sheet_name="SAF 311 SUBSIDIOS", index=False)
+        res = execute(DF_SAF311_PREUNIFICACION, DF_SAF_311, "EXPEDIENTE PAGADOR")
+        res.to_excel(writer, sheet_name="311 (Pre-unificacion)")
+        res = execute(DF_PROV_311_SEGUROS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
+        res.to_excel(writer, sheet_name="311 Seguros", index=False)
+        res = execute(DF_PROV_311_SEGUROS_VARIOS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
+        res.to_excel(writer, sheet_name="311 Seguros varios", index=False)
         
-        #res = execute(DF_SAF_311_PROV, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
+
+    with pd.ExcelWriter("PROV - 388.xlsx") as writer:
         
+        res = execute(DF_PROV_388, DF_SAF_388, "EXPEDIENTE PAGADOR")
+        res.to_excel(writer, sheet_name="SAF 388 PROVEEDORES", index=False)   
    
         
 
@@ -304,71 +229,6 @@ if __name__ == '__main__':
         res = execute(DF_SB_350_AT, DF_SAF_350)
         res.to_excel(writer, sheet_name="SAF 350 SB AT", index=False)
 
-    """
-
-    
-    DF_PROV_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311" )
-    DF_SUBSIDIOS_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Subsidios")
-    
-    DF_PROV_330 = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330" )
-    DF_PROV_330_CORREO = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="Correo Argentino" )
-    DF_PROV_330_SEGUROS = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="Seguros" )
-    DF_PROV_350_LA_CENTRAL = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "LA - CENTRAL")
-    DF_PROV_350_LA_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "LA - AT")
-    DF_PROV_350_OC = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - CENTRAL")
-    DF_PROV_350_OC_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - AT")
-    with pd.ExcelWriter("PROV - 330.xlsx") as writer:
-        
-        #res = execute(DF_PROV_330, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 330 PROVEEDORES", index=False)
-        #res = execute(DF_PROV_330_CORREO, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 330 CORREO", index=False)
-        #res = execute(DF_PROV_330_SEGUROS, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 330 SEGUROS", index=False)
-        
-        res = execute(DF_SAF_330_PROV, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 330 PROVEEDORES", index=False)
-    
-    with pd.ExcelWriter("PROV - 350.xlsx") as writer:
-        
-        #res = execute(DF_PROV_350_LA_CENTRAL, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 350 LA - CENT", index=False)
-        #res = execute(DF_PROV_350_LA_AT, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 350 LA - AT", index=False)
-        #res = execute(DF_PROV_350_OC, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 350 OC CENTRAL", index=False)
-        #res = execute(DF_PROV_350_OC_AT, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 350 OC AT", index=False)
-        
-        res = execute(DF_SAF_350_PROV, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 350 LA - CENT", index=False)
-        
-    with pd.ExcelWriter("PROV - 311.xlsx") as writer:
-        
-        #res = execute(DF_PROV_311, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
-        #res = execute(DF_SUBSIDIOS_311, DF_SAF_311)
-        #res.to_excel(writer, sheet_name="SAF 311 SUBSIDIOS", index=False)
-        
-        res = execute(DF_SAF_311_PROV, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
-        
-    with pd.ExcelWriter("PROV - 388.xlsx") as writer:
-        res = execute(DF_SAF_388_PROV, DF_SAF_388, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 388 PROVEEDORES", index=False)
-        
-        #res = execute(DF_PROV_311, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
-        #res = execute(DF_SUBSIDIOS_311, DF_SAF_311)
-        #res.to_excel(writer, sheet_name="SAF 311 SUBSIDIOS", index=False)
-        
-        
-        
-    
-   
-    #DF_SAF_311 = pd.read_excel(f"{directorio_SB}311 - SERVICIOS BASICOS - NIÑEZ.xlsx")
-    #DF_PROV_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311" )
-    """
 
     print(f"{50*'*'}")
     print(f"Finalizó la exportación de documentos")
