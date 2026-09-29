@@ -139,7 +139,7 @@ if __name__ == '__main__':
     DF_SB_350_CENTRAL = DF_SB_350["CENTRAL"]
     DF_SB_350_AT = DF_SB_350["AT"]
 
-    prev_311 = pd.read_excel("Reporte_311_341.xlsx", sheet_name="SAF 311", skiprows=4)
+    
     
     hojas_SAF = ["SAF 311", "SAF 330", "SAF 350", "SAF 388"]
     DF_SAFS = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name=hojas_SAF)
@@ -148,7 +148,7 @@ if __name__ == '__main__':
     DF_SAF_350 = DF_SAFS["SAF 350"]
     DF_SAF_388 = DF_SAFS["SAF 388"]
     
-    DF_SAF_311 = pd.concat([DF_SAF_311, prev_311])
+    
         
     DF_PROV_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311")
     DF_SUBSIDIOS_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Subsidios")
@@ -161,12 +161,12 @@ if __name__ == '__main__':
     DF_PROV_350_OC = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - CENTRAL")
     DF_PROV_350_OC_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - AT")
     DF_PROV_388 = pd.read_excel(f"{directorio_PROV}388 - PROVEEDORES.xlsx", sheet_name = "Compilado")
-    DF_PROV_311_SEGUROS = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Seguros")
-    DF_PROV_311_SEGUROS_VARIOS = pd.read_excel("SEGUROS.xlsx", sheet_name="Seguros")
+    #DF_PROV_311_SEGUROS = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Seguros")
+    #DF_PROV_311_SEGUROS_VARIOS = pd.read_excel("SEGUROS.xlsx", sheet_name="Seguros")
     #-------------------------PRE-UNIFICACION
 
-    DF_SAF311_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311 (Pre-unificacion)")
-    DF_SAF330_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330 (Pre-unificacion)")
+    #DF_SAF311_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311 (Pre-unificacion)")
+    #DF_SAF330_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330 (Pre-unificacion)")
 
     with pd.ExcelWriter("PROV - 330.xlsx") as writer:
         
@@ -176,8 +176,8 @@ if __name__ == '__main__':
         res.to_excel(writer, sheet_name="SAF 330 CORREO", index=False)
         res = execute(DF_PROV_330_SEGUROS, DF_SAF_330, "EXPEDIENTE PAGADOR")
         res.to_excel(writer, sheet_name="SAF 330 SEGUROS", index=False)
-        res = execute(DF_SAF330_PREUNIFICACION, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="330 (Pre-unificacion)")
+        #res = execute(DF_SAF330_PREUNIFICACION, DF_SAF_330, "EXPEDIENTE PAGADOR")
+        #res.to_excel(writer, sheet_name="330 (Pre-unificacion)")
         
 
     
@@ -200,12 +200,12 @@ if __name__ == '__main__':
         res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
         res = execute(DF_SUBSIDIOS_311, DF_SAF_311, forget=True)
         res.to_excel(writer, sheet_name="SAF 311 SUBSIDIOS", index=False)
-        res = execute(DF_SAF311_PREUNIFICACION, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="311 (Pre-unificacion)")
-        res = execute(DF_PROV_311_SEGUROS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="311 Seguros", index=False)
-        res = execute(DF_PROV_311_SEGUROS_VARIOS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="311 Seguros varios", index=False)
+        #res = execute(DF_SAF311_PREUNIFICACION, DF_SAF_311, "EXPEDIENTE PAGADOR")
+        #res.to_excel(writer, sheet_name="311 (Pre-unificacion)")
+        #res = execute(DF_PROV_311_SEGUROS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
+        #res.to_excel(writer, sheet_name="311 Seguros", index=False)
+        #res = execute(DF_PROV_311_SEGUROS_VARIOS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
+        #res.to_excel(writer, sheet_name="311 Seguros varios", index=False)
         
 
     with pd.ExcelWriter("PROV - 388.xlsx") as writer:
