@@ -112,47 +112,70 @@ def execute(DF_SB_PROV : pd.DataFrame, DF_SAF : pd.DataFrame,
 
     return MERGE
 
-    
+def ejecucion_del_codigo(nombre_archivo_salida : str, data_frame : pd.DataFrame or [pd.DataFrame],
+                            hojas : str or [str], data_frame_comparacion : pd.DataFrame, 
+                            columna_expediente : str or [str], index_out : bool = False,
+                            columnas_a_retornar = ["EXPEDIENTE__SIN__NORMALIZAR", "SG(auto)",
+                            "PRE(auto)", "PG(auto)", "Fecha de Pago"]) -> None:
+                            
+    print(f"Inicio de la creación del archivo: {nombre_archivo_salida}")     
+    with pd.ExcelWriter(nombre_archivo_salida) as writer:
+        conc = None
+        for data, nombre, columna in zip(data_frame, hojas, columna_expediente):
+            res = execute(data, data_frame_comparacion)
+            res.to_excel(writer, sheet_name=nombre, index=index_out)
+        print(50*"-")
+        print(f"Finalizó la creación de las hojas: {hojas}")
+        print(50*"-")
+
 
 if __name__ == '__main__':
+    from pathlib import Path
+    import warnings
 
-     
-    directorio_SB = "BASES SERVICIOS BASICOS\\"
-    directorio_PROV = "BASES PROVEEDORES\\"
+    warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
+    
+    directorio_script = Path(__file__).resolve().parent
+
+   
+    directorio_SB = f"{directorio_script}\\BASES SERVICIOS BASICOS\\"
+    directorio_PROV = f"{directorio_script}\\BASES PROVEEDORES\\"
 
     #********************************************************************************
     #ÚNICA LÍNEA A MODIFICAR, DE SER NECESARIO:
-    ARCHIVO = "OneDrive_2026-09-28.zip"
+    ARCHIVO = "OneDrive_2026-10-01.zip"
     archivos = [ARCHIVO, f"{ARCHIVO.replace('.zip',' (1).zip')}"]
     #CAMBIAR EL NOMBRE DEL ARCHIVO DESCARGADO DESDE OneDrive
     #********************************************************************************
+    
     for archivo_comprimido in archivos:
-        with ZipFile(archivo_comprimido, 'r') as zipped:
-            zipped.extractall()
-    
-    DF_SB_311 = pd.read_excel(f"{directorio_SB}311 - SERVICIOS BASICOS - NIÑEZ.xlsx")
-    
-    DF_SB_330 = pd.read_excel(f"{directorio_SB}330 - SERVICIOS BASICOS - EDUCACION.xlsx", sheet_name = "330")
+        try:
+            with ZipFile(f"{directorio_script}\\{archivo_comprimido}", 'r') as zipped:
+                zipped.extractall()
+        except FileNotFoundError as error:
+            print(f"No se encontró el archivo: {archivo_comprimido}")
+            exit(-1)
 
-    hojas_350 = ["CENTRAL", "AT"]
-    DF_SB_350 =  pd.read_excel(f"{directorio_SB}350 - SERVICIOS BASICOS - TRABAJO.xlsx", sheet_name = hojas_350)
-    DF_SB_350_CENTRAL = DF_SB_350["CENTRAL"]
-    DF_SB_350_AT = DF_SB_350["AT"]
 
-    
-    
     hojas_SAF = ["SAF 311", "SAF 330", "SAF 350", "SAF 388"]
-    DF_SAFS = pd.read_excel("Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name=hojas_SAF)
+    DF_SAFS = pd.read_excel(f"{directorio_script}\\Reporte_PG_PRE_SG_311_341.xlsx", skiprows=4, sheet_name=hojas_SAF)
     DF_SAF_311 = DF_SAFS["SAF 311"]
     DF_SAF_330 = DF_SAFS["SAF 330"]
     DF_SAF_350 = DF_SAFS["SAF 350"]
     DF_SAF_388 = DF_SAFS["SAF 388"]
-    
-    
-        
+
+
+    DF_SB_311 = pd.read_excel(f"{directorio_SB}311 - SERVICIOS BASICOS - NIÑEZ.xlsx")    
+    DF_SB_330 = pd.read_excel(f"{directorio_SB}330 - SERVICIOS BASICOS - EDUCACION.xlsx", sheet_name = "330")
+    hojas_350 = ["CENTRAL", "AT"]
+    DF_SB_350 =  pd.read_excel(f"{directorio_SB}350 - SERVICIOS BASICOS - TRABAJO.xlsx", sheet_name = hojas_350)
+    DF_SB_350_CENTRAL = DF_SB_350["CENTRAL"]
+    DF_SB_350_AT = DF_SB_350["AT"]
+    DF_SB_388 = pd.read_excel(f"{directorio_SB}388 - SERVICIOS BASICOS - MCH.xlsx", sheet_name="SERVICIOS BASICOS")
+
     DF_PROV_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311")
     DF_SUBSIDIOS_311 = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Subsidios")
-    
+
     DF_PROV_330 = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330")
     DF_PROV_330_CORREO = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="Correo Argentino" )
     DF_PROV_330_SEGUROS = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="Seguros" )
@@ -161,74 +184,71 @@ if __name__ == '__main__':
     DF_PROV_350_OC = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - CENTRAL")
     DF_PROV_350_OC_AT = pd.read_excel(f"{directorio_PROV}350 - PROVEEDORES.xlsx", sheet_name = "OC - AT")
     DF_PROV_388 = pd.read_excel(f"{directorio_PROV}388 - PROVEEDORES.xlsx", sheet_name = "Compilado")
-    #DF_PROV_311_SEGUROS = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="Seguros")
-    #DF_PROV_311_SEGUROS_VARIOS = pd.read_excel("SEGUROS.xlsx", sheet_name="Seguros")
-    #-------------------------PRE-UNIFICACION
 
-    #DF_SAF311_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}311 - PROVEEDORES.xlsx", sheet_name ="311 (Pre-unificacion)")
-    #DF_SAF330_PREUNIFICACION = pd.read_excel(f"{directorio_PROV}330 - PROVEEDORES.xlsx", sheet_name ="330 (Pre-unificacion)")
 
-    with pd.ExcelWriter("PROV - 330.xlsx") as writer:
-        
-        res = execute(DF_PROV_330, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 330 PROVEEDORES", index=False)
-        res = execute(DF_PROV_330_CORREO, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 330 CORREO", index=False)
-        res = execute(DF_PROV_330_SEGUROS, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 330 SEGUROS", index=False)
-        #res = execute(DF_SAF330_PREUNIFICACION, DF_SAF_330, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="330 (Pre-unificacion)")
-        
+    ejecucion_311_prov = {'nombre_archivo_salida' : f'{directorio_script}\\PROV - 311.xlsx',
+                            'data_frame' : [DF_PROV_311, DF_SUBSIDIOS_311],
+                            'hojas' : ['311', 'Subsidios'],
+                            'data_frame_comparacion' : DF_SAF_311,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR','EXPEDIENTE PAGADOR']    
+                        }
+    ejecucion_330_prov = {'nombre_archivo_salida' : f'{directorio_script}\\PROV - 330.xlsx',
+                            'data_frame' : [DF_PROV_330, DF_PROV_330_CORREO, DF_PROV_330_SEGUROS],
+                            'hojas' : ['330', '330 Correo', '330 Seguros'],
+                            'data_frame_comparacion' : DF_SAF_330,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR','EXPEDIENTE PAGADOR', 
+                            'EXPEDIENTE PAGADOR']    
+                        }
+    ejecucion_350_prov = {'nombre_archivo_salida' : f'{directorio_script}\\PROV - 350.xlsx',
+                            'data_frame' : [DF_PROV_350_LA_CENTRAL,
+                            DF_PROV_350_LA_AT, DF_PROV_350_OC, DF_PROV_350_OC_AT],
+                            'hojas' : ['350 LA CENTRAL','350 LA AT', '350 OC CENTRAL', '350 OC AT'],
+                            'data_frame_comparacion' : DF_SAF_350,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR','EXPEDIENTE PAGADOR', 
+                            'EXPEDIENTE PAGADOR', 'EXPEDIENTE PAGADOR']    
+                        }
+    ejecucion_388_prov = {'nombre_archivo_salida' : f'{directorio_script}\\PROV - 388.xlsx',
+                            'data_frame' : [DF_PROV_388],
+                            'hojas' : ['388'],
+                            'data_frame_comparacion' : DF_SAF_388,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR']    
+                        }
+    
+    ejecucion_del_codigo(**ejecucion_311_prov)
+    ejecucion_del_codigo(**ejecucion_330_prov)
+    ejecucion_del_codigo(**ejecucion_350_prov)
+    ejecucion_del_codigo(**ejecucion_388_prov)
 
     
-    with pd.ExcelWriter("PROV - 350.xlsx") as writer:
-        
-        res = execute(DF_PROV_350_LA_CENTRAL, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 350 LA - CENT", index=False)
-        res = execute(DF_PROV_350_LA_AT, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 350 LA - AT", index=False)
-        res = execute(DF_PROV_350_OC, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 350 OC CENTRAL", index=False)
-        res = execute(DF_PROV_350_OC_AT, DF_SAF_350, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 350 OC AT", index=False)
-        
+    
+    #Se exportan los resultados de las planillas de SERVICIOS BASICOS 
+    ejecucion_311_SB = {'nombre_archivo_salida' : f'{directorio_script}\\SB - 311.xlsx',
+                            'data_frame' : [DF_SB_311],
+                            'hojas' : ['311'],
+                            'data_frame_comparacion' : DF_SAF_311,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR']}
+    
+    ejecucion_330_SB = {'nombre_archivo_salida' : f'{directorio_script}\\SB - 330.xlsx',
+                            'data_frame' : [DF_SB_330],
+                            'hojas' : ['330'],
+                            'data_frame_comparacion' : DF_SAF_330,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR']}
 
-        
-    with pd.ExcelWriter("PROV - 311.xlsx") as writer:
-        
-        res = execute(DF_PROV_311, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 311 PROVEEDORES", index=False)
-        res = execute(DF_SUBSIDIOS_311, DF_SAF_311, forget=True)
-        res.to_excel(writer, sheet_name="SAF 311 SUBSIDIOS", index=False)
-        #res = execute(DF_SAF311_PREUNIFICACION, DF_SAF_311, "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="311 (Pre-unificacion)")
-        #res = execute(DF_PROV_311_SEGUROS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="311 Seguros", index=False)
-        #res = execute(DF_PROV_311_SEGUROS_VARIOS, DF_SAF_311 , "EXPEDIENTE PAGADOR")
-        #res.to_excel(writer, sheet_name="311 Seguros varios", index=False)
-        
+    ejecucion_350_SB = {'nombre_archivo_salida' : f'{directorio_script}\\SB - 350.xlsx',
+                            'data_frame' : [DF_SB_350_CENTRAL, DF_SB_350_AT],
+                            'hojas' : ['350 Central', '350 AT'],
+                            'data_frame_comparacion' : DF_SAF_350,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR', 'EXPEDIENTE PAGADOR']}
+    ejecucion_388_SB = {'nombre_archivo_salida' : f'{directorio_script}\\SB - 388.xlsx',
+                            'data_frame' : [DF_SB_388],
+                            'hojas' : ['388'],
+                            'data_frame_comparacion' : DF_SAF_388,
+                            'columna_expediente' : ['EXPEDIENTE PAGADOR']}
 
-    with pd.ExcelWriter("PROV - 388.xlsx") as writer:
-        
-        res = execute(DF_PROV_388, DF_SAF_388, "EXPEDIENTE PAGADOR")
-        res.to_excel(writer, sheet_name="SAF 388 PROVEEDORES", index=False)   
-   
-        
-
-    #Se exportan los resultados de las planillas de SERVICIOS BASICOS
-    with pd.ExcelWriter("SB - 330.xlsx") as writer:
-        res = execute(DF_SB_330, DF_SAF_330)
-        res.to_excel(writer, sheet_name="SAF 330 SB", index=False)
-
-    with pd.ExcelWriter("SB - 311.xlsx") as writer:
-        res = execute(DF_SB_311, DF_SAF_311)
-        res.to_excel(writer, sheet_name="SAF 311 SB", index=False)
-    with pd.ExcelWriter("SB - 350.xlsx") as writer:
-        res = execute(DF_SB_350_CENTRAL, DF_SAF_350)
-        res.to_excel(writer, sheet_name="SAF 350 SB CENTRAL", index=False)
-        res = execute(DF_SB_350_AT, DF_SAF_350)
-        res.to_excel(writer, sheet_name="SAF 350 SB AT", index=False)
-
+    ejecucion_del_codigo(**ejecucion_311_SB)
+    ejecucion_del_codigo(**ejecucion_330_SB)
+    ejecucion_del_codigo(**ejecucion_350_SB)
+    ejecucion_del_codigo(**ejecucion_388_SB)    
 
     print(f"{50*'*'}")
     print(f"Finalizó la exportación de documentos")
